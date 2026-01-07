@@ -1,0 +1,25 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Círculo de brújula -->
+    <circle cx="80" cy="80" r="55" stroke="#a8b56a" stroke-width="4" stroke-dasharray="300 40" stroke-linecap="round" fill="none"/>
+    
+    <!-- Puntos cardinales -->
+    <text x="80" y="18" font-family="Outfit, sans-serif" font-size="14" font-weight="700" fill="#e2e6c4" text-anchor="middle">N</text>
+    <text x="80" y="156" font-family="Outfit, sans-serif" font-size="12" font-weight="600" fill="#8a9a4a" text-anchor="middle">S</text>
+    <text x="148" y="84" font-family="Outfit, sans-serif" font-size="12" font-weight="600" fill="#8a9a4a" text-anchor="middle">E</text>
+    <text x="12" y="84" font-family="Outfit, sans-serif" font-size="12" font-weight="600" fill="#8a9a4a" text-anchor="middle">O</text>
+    
+    <!-- Aguja Norte: Tienda de campaña -->
+    <path d="M80 28 L98 72 L80 62 L62 72 Z" fill="#c5ce94"/>
+    <!-- Entrada de la tienda -->
+    <path d="M73 72 L80 50 L87 72" stroke="#3d4422" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Banderín -->
+    <line x1="80" y1="28" x2="80" y2="20" stroke="#e2e6c4" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M80 20 L90 25 L80 28" fill="#8a9a4a"/>
+    
+    <!-- Aguja Sur -->
+    <path d="M80 88 L90 82 L80 132 L70 82 Z" fill="#6b7a35"/>
+    
+    <!-- Centro -->
+    <circle cx="80" cy="80" r="7" fill="#e2e6c4"/>
+    <circle cx="80" cy="80" r="3" fill="#3d4422"/>
+</svg>

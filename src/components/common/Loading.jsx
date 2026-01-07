@@ -1,0 +1,12 @@
+export default function Loading({ message = 'Buscando los mejores destinos...' }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12">
+      <div className="relative">
+        <div className="w-16 h-16 border-4 border-primary-200 rounded-full"></div>
+        <div className="w-16 h-16 border-4 border-primary-500 rounded-full border-t-transparent animate-spin absolute top-0 left-0"></div>
+      </div>
+      <p className="mt-4 text-gray-600 text-lg">{message}</p>
+      <p className="mt-2 text-gray-400 text-sm">Esto puede tomar unos segundos</p>
+    </div>
+  );
+}
