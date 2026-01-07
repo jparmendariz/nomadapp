@@ -36,10 +36,41 @@ export default function DealCard({ deal, isHot = false, compact = false, currenc
     return { text: null, isNew: false };
   }, [deal.id, deal.createdAt, t]);
 
-  // Simular popularidad (basado en descuento)
-  const viewingCount = useMemo(() => {
+  // Contador dinámico de personas viendo (cambia cada 3-8 segundos)
+  const [viewingCount, setViewingCount] = useState(() => {
     return Math.floor(5 + (deal.discountPercent || 0) / 5);
+  });
+
+  useEffect(() => {
+    const baseCount = Math.floor(5 + (deal.discountPercent || 0) / 5);
+
+    const updateViewers = () => {
+      // Variación aleatoria de -2 a +3
+      const variation = Math.floor(Math.random() * 6) - 2;
+      const newCount = Math.max(3, baseCount + variation);
+      setViewingCount(newCount);
+    };
+
+    // Actualizar cada 3-8 segundos aleatoriamente
+    const scheduleNext = () => {
+      const delay = 3000 + Math.random() * 5000;
+      return setTimeout(() => {
+        updateViewers();
+        timerRef.current = scheduleNext();
+      }, delay);
+    };
+
+    const timerRef = { current: scheduleNext() };
+
+    return () => clearTimeout(timerRef.current);
   }, [deal.discountPercent]);
+
+  // Determinar si el vuelo es solo ida o ida+vuelta
+  const isRoundTrip = useMemo(() => {
+    if (!isFlight) return false;
+    if (deal.isOneWay) return false;
+    return !!(deal.travelDatesEnd || deal.returnDate);
+  }, [isFlight, deal.isOneWay, deal.travelDatesEnd, deal.returnDate]);
 
   // Indicador de tendencia de precio (simulado basado en descuento y frescura)
   const priceTrend = useMemo(() => {
@@ -343,7 +374,7 @@ export default function DealCard({ deal, isHot = false, compact = false, currenc
                 </span>
               )}
               <span className="text-xs sm:text-sm font-normal text-gray-500">
-                {currency} {isCruise || isHotel ? t('deal.perPerson') : t('deal.roundTrip')}
+                {currency} {isCruise || isHotel ? t('deal.perPerson') : (isRoundTrip ? t('deal.roundTrip') : t('deal.oneWay'))}
               </span>
             </div>
             <p className="text-base text-gray-400 line-through">

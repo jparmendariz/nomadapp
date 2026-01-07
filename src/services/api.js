@@ -102,6 +102,9 @@ function generateMockDeals() {
       dealUrl = generateDealUrl(type, dest, origin, travelDate, returnDate);
     }
 
+    // 30% de los vuelos son solo ida
+    const isOneWayFlight = type === 'flight' && Math.random() < 0.3;
+
     const deal = {
       id: `deal-${i + 1}`,
       type,
@@ -110,12 +113,13 @@ function generateMockDeals() {
       country: dest.country,
       region: dest.region,
       originName: origin,
-      price: basePrice,
-      originalPrice,
+      price: isOneWayFlight ? Math.round(basePrice * 0.6) : basePrice, // Solo ida es más barato
+      originalPrice: isOneWayFlight ? Math.round(originalPrice * 0.6) : originalPrice,
       discountPercent: discount,
       nights: type !== 'flight' ? nights : null,
       travelDatesStart: travelDate.toISOString().split('T')[0],
-      travelDatesEnd: returnDate.toISOString().split('T')[0],
+      travelDatesEnd: isOneWayFlight ? null : returnDate.toISOString().split('T')[0],
+      isOneWay: isOneWayFlight,
       createdAt: createdAt.toISOString(),
       expiresAt: new Date(now.getTime() + (2 + Math.random() * 22) * 60 * 60 * 1000).toISOString(),
       provider: cruiseLine ? cruiseLine.name : null,
