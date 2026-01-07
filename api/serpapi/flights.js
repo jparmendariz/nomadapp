@@ -117,19 +117,30 @@ export default async function handler(req, res) {
       const outboundLeg = flight.flights?.[0];
       const returnLeg = flight.flights?.[flight.flights.length - 1];
 
+      // Extract price from multiple possible locations
+      const price = flight.price || flight.total_price ||
+                    outboundLeg?.price || 0;
+
+      // Skip flights with no price
+      if (!price) return null;
+
+      // Extract times properly
+      const depTime = outboundLeg?.departure_airport?.time;
+      const arrTime = outboundLeg?.arrival_airport?.time;
+
       return {
         id: `serpapi-best-${index}`,
         type: 'flight',
         source: 'Google Flights',
-        price: flight.price || 0,
+        price: price,
         currency: 'USD',
         originCode: origin,
         originName: CITY_NAMES[origin] || origin,
         destinationCode: destination,
         destinationName: CITY_NAMES[destination] || destination,
         departureDate: depDate,
-        departureTime: outboundLeg?.departure_airport?.time?.split(' ')[0],
-        arrivalTime: outboundLeg?.arrival_airport?.time?.split(' ')[0],
+        departureTime: outboundLeg?.departure_airport?.time || '',
+        arrivalTime: outboundLeg?.arrival_airport?.time || '',
         returnDate: retDate,
         isRoundTrip: !!retDate,
         stops: (flight.flights?.length || 1) - 1,
@@ -140,25 +151,32 @@ export default async function handler(req, res) {
         isBestFlight: true,
         dealUrl: generateAffiliateLink(origin, destination, depDate, retDate)
       };
-    });
+    }).filter(f => f !== null);
 
     // Process other flights
     const otherFlights = (data.other_flights || []).map((flight, index) => {
       const outboundLeg = flight.flights?.[0];
 
+      // Extract price from multiple possible locations
+      const price = flight.price || flight.total_price ||
+                    outboundLeg?.price || 0;
+
+      // Skip flights with no price
+      if (!price) return null;
+
       return {
         id: `serpapi-other-${index}`,
         type: 'flight',
         source: 'Google Flights',
-        price: flight.price || 0,
+        price: price,
         currency: 'USD',
         originCode: origin,
         originName: CITY_NAMES[origin] || origin,
         destinationCode: destination,
         destinationName: CITY_NAMES[destination] || destination,
         departureDate: depDate,
-        departureTime: outboundLeg?.departure_airport?.time?.split(' ')[0],
-        arrivalTime: outboundLeg?.arrival_airport?.time?.split(' ')[0],
+        departureTime: outboundLeg?.departure_airport?.time || '',
+        arrivalTime: outboundLeg?.arrival_airport?.time || '',
         returnDate: retDate,
         isRoundTrip: !!retDate,
         stops: (flight.flights?.length || 1) - 1,
@@ -171,7 +189,8 @@ export default async function handler(req, res) {
       };
     });
 
-    const allFlights = [...bestFlights, ...otherFlights];
+    // Combine and filter out nulls
+    const allFlights = [...bestFlights, ...otherFlights].filter(f => f !== null);
 
     // Sort by price
     allFlights.sort((a, b) => a.price - b.price);

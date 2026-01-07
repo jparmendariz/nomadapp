@@ -11,11 +11,11 @@ const RAPIDAPI_HOST = 'booking-com.p.rapidapi.com';
 // Booking.com affiliate ID (AWIN)
 const BOOKING_AFFILIATE_ID = process.env.VITE_BOOKING_AFFILIATE_ID || '2718406';
 
-// City name to Booking.com dest_id mapping
+// City name to Booking.com dest_id mapping (verified via API)
 const CITY_DEST_IDS = {
-  'Cancún': { dest_id: '-1658079', dest_type: 'city' },
-  'cancun': { dest_id: '-1658079', dest_type: 'city' },
-  'CUN': { dest_id: '-1658079', dest_type: 'city' },
+  'Cancún': { dest_id: '-1655011', dest_type: 'city' },
+  'cancun': { dest_id: '-1655011', dest_type: 'city' },
+  'CUN': { dest_id: '-1655011', dest_type: 'city' },
   'Miami': { dest_id: '20023181', dest_type: 'city' },
   'MIA': { dest_id: '20023181', dest_type: 'city' },
   'Ciudad de México': { dest_id: '-1658079', dest_type: 'city' },
@@ -34,8 +34,8 @@ const CITY_DEST_IDS = {
   'Londres': { dest_id: '-2601889', dest_type: 'city' },
   'London': { dest_id: '-2601889', dest_type: 'city' },
   'LHR': { dest_id: '-2601889', dest_type: 'city' },
-  'Bogotá': { dest_id: '-592318', dest_type: 'city' },
-  'BOG': { dest_id: '-592318', dest_type: 'city' },
+  'Bogotá': { dest_id: '-578472', dest_type: 'city' },
+  'BOG': { dest_id: '-578472', dest_type: 'city' },
   'Lima': { dest_id: '-1090165', dest_type: 'city' },
   'LIM': { dest_id: '-1090165', dest_type: 'city' }
 };

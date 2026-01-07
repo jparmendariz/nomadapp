@@ -46,17 +46,17 @@ const CITY_NAMES = {
   'CDG': 'París'
 };
 
-// Booking.com destination IDs
+// Booking.com destination IDs (verified via API)
 const BOOKING_DEST_IDS = {
-  'CUN': { dest_id: '-1658079', dest_type: 'city' },
-  'MIA': { dest_id: '20023181', dest_type: 'city' },
-  'LAX': { dest_id: '20014181', dest_type: 'city' },
-  'JFK': { dest_id: '20088325', dest_type: 'city' },
-  'MAD': { dest_id: '-390625', dest_type: 'city' },
-  'BCN': { dest_id: '-372490', dest_type: 'city' },
-  'CDG': { dest_id: '-1456928', dest_type: 'city' },
-  'BOG': { dest_id: '-592318', dest_type: 'city' },
-  'LIM': { dest_id: '-1090165', dest_type: 'city' }
+  'CUN': { dest_id: '-1655011', dest_type: 'city' },  // Cancún
+  'MIA': { dest_id: '20023181', dest_type: 'city' },  // Miami
+  'LAX': { dest_id: '20014181', dest_type: 'city' },  // Los Angeles
+  'JFK': { dest_id: '20088325', dest_type: 'city' },  // New York
+  'MAD': { dest_id: '-390625', dest_type: 'city' },   // Madrid
+  'BCN': { dest_id: '-372490', dest_type: 'city' },   // Barcelona
+  'CDG': { dest_id: '-1456928', dest_type: 'city' },  // París
+  'BOG': { dest_id: '-578472', dest_type: 'city' },   // Bogotá
+  'LIM': { dest_id: '-1090165', dest_type: 'city' }   // Lima
 };
 
 // Popular hotel destinations
@@ -186,23 +186,26 @@ async function searchSerpAPIFlights(origin, destination, departureDate, returnDa
 
     const data = await response.json();
 
-    // Process best flights
+    // Process best flights (filter out flights without prices)
     const bestFlights = (data.best_flights || []).map((flight, index) => {
       const outboundLeg = flight.flights?.[0];
+      const price = flight.price || flight.total_price || 0;
+
+      if (!price) return null;
 
       return {
         id: `serpapi-${origin}-${destination}-${index}`,
         type: 'flight',
         source: 'Google Flights',
-        price: flight.price || 0,
+        price: price,
         currency: 'USD',
         originCode: origin,
         originName: CITY_NAMES[origin] || origin,
         destinationCode: destination,
         destinationName: CITY_NAMES[destination] || destination,
         departureDate: departureDate,
-        departureTime: outboundLeg?.departure_airport?.time?.split(' ')[0],
-        arrivalTime: outboundLeg?.arrival_airport?.time?.split(' ')[0],
+        departureTime: outboundLeg?.departure_airport?.time || '',
+        arrivalTime: outboundLeg?.arrival_airport?.time || '',
         returnDate: returnDate,
         isRoundTrip: !!returnDate,
         stops: (flight.flights?.length || 1) - 1,
@@ -211,25 +214,28 @@ async function searchSerpAPIFlights(origin, destination, departureDate, returnDa
         airlineLogo: outboundLeg?.airline_logo,
         dealUrl: generateAffiliateLink(origin, destination, departureDate, returnDate)
       };
-    });
+    }).filter(f => f !== null);
 
-    // Also include other flights (limit to top 3)
+    // Also include other flights (limit to top 3, filter out without prices)
     const otherFlights = (data.other_flights || []).slice(0, 3).map((flight, index) => {
       const outboundLeg = flight.flights?.[0];
+      const price = flight.price || flight.total_price || 0;
+
+      if (!price) return null;
 
       return {
         id: `serpapi-other-${origin}-${destination}-${index}`,
         type: 'flight',
         source: 'Google Flights',
-        price: flight.price || 0,
+        price: price,
         currency: 'USD',
         originCode: origin,
         originName: CITY_NAMES[origin] || origin,
         destinationCode: destination,
         destinationName: CITY_NAMES[destination] || destination,
         departureDate: departureDate,
-        departureTime: outboundLeg?.departure_airport?.time?.split(' ')[0],
-        arrivalTime: outboundLeg?.arrival_airport?.time?.split(' ')[0],
+        departureTime: outboundLeg?.departure_airport?.time || '',
+        arrivalTime: outboundLeg?.arrival_airport?.time || '',
         returnDate: returnDate,
         isRoundTrip: !!returnDate,
         stops: (flight.flights?.length || 1) - 1,
@@ -238,7 +244,7 @@ async function searchSerpAPIFlights(origin, destination, departureDate, returnDa
         airlineLogo: outboundLeg?.airline_logo,
         dealUrl: generateAffiliateLink(origin, destination, departureDate, returnDate)
       };
-    });
+    }).filter(f => f !== null);
 
     return [...bestFlights, ...otherFlights];
   } catch (e) {
