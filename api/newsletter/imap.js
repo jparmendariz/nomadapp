@@ -420,6 +420,7 @@ export function identifySender(fromAddress) {
 
 /**
  * Connect to IMAP and fetch unread emails from known senders
+ * Only fetches emails from the last 24 hours
  */
 export async function fetchUnreadNewsletters(maxEmails = 20) {
   return new Promise((resolve, reject) => {
@@ -430,6 +431,11 @@ export async function fetchUnreadNewsletters(maxEmails = 20) {
     const imap = new Imap(IMAP_CONFIG);
     const emails = [];
 
+    // Calculate date for 24 hours ago (IMAP SINCE uses date only, not time)
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const sinceDate = yesterday.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+
     imap.once('ready', () => {
       imap.openBox('INBOX', false, (err, box) => {
         if (err) {
@@ -437,8 +443,8 @@ export async function fetchUnreadNewsletters(maxEmails = 20) {
           return reject(err);
         }
 
-        // Search for unread emails
-        imap.search(['UNSEEN'], (err, results) => {
+        // Search for unread emails from the last 24 hours only
+        imap.search(['UNSEEN', ['SINCE', sinceDate]], (err, results) => {
           if (err) {
             imap.end();
             return reject(err);
