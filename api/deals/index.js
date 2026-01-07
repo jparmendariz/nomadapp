@@ -1,6 +1,7 @@
 /**
  * Aggregated Deals API
- * Combines flights from multiple sources: Amadeus, SerpAPI (Google Flights), Travelpayouts
+ * Combines flights from multiple sources: Amadeus, SerpAPI (Google Flights)
+ * Combines hotels from: RapidAPI (Booking.com)
  */
 
 const AMADEUS_API_KEY = process.env.AMADEUS_API_KEY;
@@ -8,6 +9,10 @@ const AMADEUS_API_SECRET = process.env.AMADEUS_API_SECRET;
 const AMADEUS_API_URL = 'https://api.amadeus.com';
 
 const SERPAPI_KEY = process.env.SERPAPI_KEY;
+
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
+const RAPIDAPI_HOST = 'booking-com.p.rapidapi.com';
+const BOOKING_AFFILIATE_ID = process.env.VITE_BOOKING_AFFILIATE_ID || '2718406';
 
 const TRAVELPAYOUTS_MARKER = process.env.TRAVELPAYOUTS_MARKER || '486713';
 
@@ -40,6 +45,22 @@ const CITY_NAMES = {
   'BCN': 'Barcelona',
   'CDG': 'París'
 };
+
+// Booking.com destination IDs
+const BOOKING_DEST_IDS = {
+  'CUN': { dest_id: '-1658079', dest_type: 'city' },
+  'MIA': { dest_id: '20023181', dest_type: 'city' },
+  'LAX': { dest_id: '20014181', dest_type: 'city' },
+  'JFK': { dest_id: '20088325', dest_type: 'city' },
+  'MAD': { dest_id: '-390625', dest_type: 'city' },
+  'BCN': { dest_id: '-372490', dest_type: 'city' },
+  'CDG': { dest_id: '-1456928', dest_type: 'city' },
+  'BOG': { dest_id: '-592318', dest_type: 'city' },
+  'LIM': { dest_id: '-1090165', dest_type: 'city' }
+};
+
+// Popular hotel destinations
+const HOTEL_DESTINATIONS = ['CUN', 'MIA', 'MAD', 'BCN', 'BOG'];
 
 // Amadeus token cache
 let amadeusToken = null;
@@ -226,6 +247,74 @@ async function searchSerpAPIFlights(origin, destination, departureDate, returnDa
   }
 }
 
+async function searchBookingHotels(destination, checkinDate, checkoutDate) {
+  if (!RAPIDAPI_KEY) return [];
+
+  const destInfo = BOOKING_DEST_IDS[destination];
+  if (!destInfo) return [];
+
+  try {
+    const searchParams = new URLSearchParams({
+      dest_id: destInfo.dest_id,
+      dest_type: destInfo.dest_type,
+      checkin_date: checkinDate,
+      checkout_date: checkoutDate,
+      adults_number: '2',
+      room_number: '1',
+      order_by: 'popularity',
+      filter_by_currency: 'USD',
+      locale: 'es',
+      units: 'metric',
+      page_number: '0'
+    });
+
+    const response = await fetch(
+      `https://${RAPIDAPI_HOST}/v1/hotels/search?${searchParams}`,
+      {
+        headers: {
+          'X-RapidAPI-Key': RAPIDAPI_KEY,
+          'X-RapidAPI-Host': RAPIDAPI_HOST
+        }
+      }
+    );
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+
+    // Process top 3 hotels per destination
+    return (data.result || []).slice(0, 3).map((hotel, index) => {
+      const price = hotel.min_total_price || hotel.price_breakdown?.gross_price || 0;
+      const nights = Math.ceil((new Date(checkoutDate) - new Date(checkinDate)) / (1000 * 60 * 60 * 24));
+      const pricePerNight = nights > 0 ? Math.round(price / nights) : price;
+
+      return {
+        id: `booking-${destination}-${hotel.hotel_id || index}`,
+        type: 'hotel',
+        source: 'Booking.com',
+        name: hotel.hotel_name || 'Hotel',
+        price: Math.round(price),
+        pricePerNight,
+        currency: 'USD',
+        destinationCode: destination,
+        destinationName: CITY_NAMES[destination] || destination,
+        checkinDate,
+        checkoutDate,
+        nights,
+        rating: hotel.review_score || 0,
+        reviewCount: hotel.review_nr || 0,
+        stars: hotel.class || 0,
+        photoUrl: hotel.max_photo_url || hotel.main_photo_url || null,
+        freeCancellation: hotel.is_free_cancellable === 1,
+        dealUrl: `https://www.booking.com/searchresults.html?aid=${BOOKING_AFFILIATE_ID}&checkin=${checkinDate}&checkout=${checkoutDate}&group_adults=2&no_rooms=1`
+      };
+    });
+  } catch (e) {
+    console.error('Booking.com search error:', e);
+    return [];
+  }
+}
+
 function generateAffiliateLink(origin, destination, departureDate, returnDate) {
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
@@ -266,8 +355,8 @@ export default async function handler(req, res) {
       return date.toISOString().split('T')[0];
     };
 
-    // Search popular routes in parallel from multiple sources
-    const searchPromises = POPULAR_ROUTES.slice(0, 6).map(async (route) => {
+    // Search popular flight routes in parallel from multiple sources
+    const flightPromises = POPULAR_ROUTES.slice(0, 6).map(async (route) => {
       const departureDate = getRandomFutureDate(14, 45);
       const returnDate = Math.random() > 0.3 ? getRandomFutureDate(50, 75) : null;
 
@@ -280,17 +369,39 @@ export default async function handler(req, res) {
       return [...amadeusFlights, ...serpApiFlights];
     });
 
-    const results = await Promise.all(searchPromises);
+    // Search hotels in popular destinations
+    const hotelPromises = HOTEL_DESTINATIONS.map(async (destination) => {
+      const checkinDate = getRandomFutureDate(14, 30);
+      const checkoutDate = getRandomFutureDate(17, 35);
+      return searchBookingHotels(destination, checkinDate, checkoutDate);
+    });
 
-    results.forEach(flights => {
+    // Execute all searches in parallel
+    const [flightResults, hotelResults] = await Promise.all([
+      Promise.all(flightPromises),
+      Promise.all(hotelPromises)
+    ]);
+
+    // Combine flight results
+    flightResults.forEach(flights => {
       allDeals.push(...flights);
     });
 
-    // Remove duplicates based on similar price and route
+    // Combine hotel results
+    hotelResults.forEach(hotels => {
+      allDeals.push(...hotels);
+    });
+
+    // Remove duplicates based on type-specific keys
     const uniqueDeals = [];
     const seen = new Set();
     for (const deal of allDeals) {
-      const key = `${deal.originCode}-${deal.destinationCode}-${Math.round(deal.price / 10) * 10}`;
+      let key;
+      if (deal.type === 'hotel') {
+        key = `hotel-${deal.destinationCode}-${deal.name}-${Math.round(deal.price / 10) * 10}`;
+      } else {
+        key = `flight-${deal.originCode}-${deal.destinationCode}-${Math.round(deal.price / 10) * 10}`;
+      }
       if (!seen.has(key)) {
         seen.add(key);
         uniqueDeals.push(deal);
@@ -322,15 +433,17 @@ export default async function handler(req, res) {
 
     // Calculate stats
     const sources = [...new Set(formattedDeals.map(d => d.source).filter(Boolean))];
+    const flightCount = formattedDeals.filter(d => d.type === 'flight').length;
+    const hotelCount = formattedDeals.filter(d => d.type === 'hotel').length;
     const stats = {
       total: formattedDeals.length,
-      flights: formattedDeals.length,
-      hotels: 0,
+      flights: flightCount,
+      hotels: hotelCount,
       cruises: 0,
       avgDiscount: formattedDeals.length > 0
         ? Math.round(formattedDeals.reduce((acc, d) => acc + d.discountPercent, 0) / formattedDeals.length)
         : 0,
-      sources: sources.length > 0 ? sources : ['Amadeus', 'Google Flights']
+      sources: sources.length > 0 ? sources : ['Amadeus', 'Google Flights', 'Booking.com']
     };
 
     return res.status(200).json({
