@@ -311,29 +311,76 @@ export async function getDestinationDetails(code, params) {
   return response.data;
 }
 
+// Cache para deals reales de la API
+let realDealsCache = null;
+let realDealsCacheTime = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
 export async function getDeals(filters = {}) {
-  try {
-    const response = await api.get('/deals', { params: filters });
-    return response.data;
-  } catch (error) {
-    // Modo demo: retornar datos mock cuando no hay backend
-    console.log('Using mock deals data (demo mode)');
+  const now = Date.now();
 
-    if (!mockDealsCache) {
-      mockDealsCache = generateMockDeals();
-    }
-
-    const deals = mockDealsCache;
-    const stats = {
-      total: deals.length,
-      flights: deals.filter(d => d.type === 'flight').length,
-      cruises: deals.filter(d => d.type === 'cruise').length,
-      hotels: deals.filter(d => d.type === 'hotel').length,
-      avgDiscount: Math.round(deals.reduce((acc, d) => acc + d.discountPercent, 0) / deals.length)
-    };
-
-    return { deals, stats };
+  // Usar cache si es válido
+  if (realDealsCache && realDealsCacheTime && (now - realDealsCacheTime) < CACHE_DURATION) {
+    console.log('Using cached deals data');
+    return realDealsCache;
   }
+
+  try {
+    // Intentar obtener deals reales del endpoint agregador
+    console.log('Fetching real deals from aggregator API...');
+    const response = await fetch('/api/deals');
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success && data.deals && data.deals.length > 0) {
+        console.log(`Loaded ${data.deals.length} real deals from aggregator`);
+        realDealsCache = { deals: data.deals, stats: data.stats };
+        realDealsCacheTime = now;
+        return realDealsCache;
+      }
+    }
+  } catch (error) {
+    console.log('Aggregator API error:', error.message);
+  }
+
+  // Fallback: intentar Travelpayouts
+  try {
+    console.log('Trying Travelpayouts as fallback...');
+    const { getFormattedDeals } = await import('./travelpayoutsService');
+    const result = await getFormattedDeals('USD');
+
+    if (result.deals && result.deals.length > 0) {
+      console.log(`Loaded ${result.deals.length} deals from Travelpayouts`);
+      realDealsCache = result;
+      realDealsCacheTime = now;
+      return result;
+    }
+  } catch (error) {
+    console.log('Travelpayouts error:', error.message);
+  }
+
+  // Último fallback: datos mock
+  console.log('Using mock data as last fallback');
+  if (!mockDealsCache) {
+    mockDealsCache = generateMockDeals();
+  }
+
+  const deals = mockDealsCache;
+  const stats = {
+    total: deals.length,
+    flights: deals.filter(d => d.type === 'flight').length,
+    cruises: deals.filter(d => d.type === 'cruise').length,
+    hotels: deals.filter(d => d.type === 'hotel').length,
+    avgDiscount: Math.round(deals.reduce((acc, d) => acc + d.discountPercent, 0) / deals.length)
+  };
+
+  return { deals, stats };
+}
+
+// Limpiar cache de deals reales
+export function clearRealDealsCache() {
+  realDealsCache = null;
+  realDealsCacheTime = null;
 }
 
 export default api;

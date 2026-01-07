@@ -181,6 +181,26 @@ export default function DealCard({ deal, isHot = false, compact = false, currenc
           <p className="text-xs text-gray-500 mb-0.5 truncate">{info.subtitle}</p>
           <h3 className="font-semibold text-gray-800 text-sm line-clamp-1">{info.title}</h3>
 
+          {/* Indicador de ida/vuelta para vuelos */}
+          {isFlight && (
+            <span className={`inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-xs font-medium ${
+              isRoundTrip
+                ? 'bg-blue-100 text-blue-700'
+                : 'bg-amber-100 text-amber-700'
+            }`}>
+              {isRoundTrip ? (
+                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+              ) : (
+                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              )}
+              {isRoundTrip ? t('deal.roundTrip') : t('deal.oneWay')}
+            </span>
+          )}
+
           {/* Popularidad */}
           <p className="text-xs text-orange-500 mt-1">
             {t('deal.peopleViewing', { count: viewingCount })}
@@ -335,11 +355,49 @@ export default function DealCard({ deal, isHot = false, compact = false, currenc
             <>
               <p className="text-sm text-gray-500 mb-1">{t('deal.from')} {deal.originName || 'Mexico'}</p>
               <h3 className="font-bold text-gray-800 text-lg mb-2">{info.title}</h3>
-              {deal.region && (
-                <span className="inline-block bg-olive-100 text-olive-700 text-xs px-2 py-0.5 rounded-full mb-2 capitalize">
-                  {deal.region}
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                {/* Indicador de ida o ida+vuelta */}
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                  isRoundTrip
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'bg-amber-100 text-amber-700'
+                }`}>
+                  {isRoundTrip ? (
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                  ) : (
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  )}
+                  {isRoundTrip ? t('deal.roundTrip') : t('deal.oneWay')}
                 </span>
-              )}
+                {/* Escalas */}
+                {deal.transfers !== undefined && (
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                    deal.transfers === 0
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                    {deal.transfers === 0 ? t('deal.direct') : `${deal.transfers} ${t('deal.stops')}`}
+                  </span>
+                )}
+                {/* Aerolínea */}
+                {deal.airline && (
+                  <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">
+                    {deal.airline}
+                  </span>
+                )}
+                {deal.region && (
+                  <span className="inline-block bg-olive-100 text-olive-700 text-xs px-2 py-0.5 rounded-full capitalize">
+                    {deal.region}
+                  </span>
+                )}
+              </div>
             </>
           )}
 
@@ -374,7 +432,7 @@ export default function DealCard({ deal, isHot = false, compact = false, currenc
                 </span>
               )}
               <span className="text-xs sm:text-sm font-normal text-gray-500">
-                {currency} {isCruise || isHotel ? t('deal.perPerson') : (isRoundTrip ? t('deal.roundTrip') : t('deal.oneWay'))}
+                {currency} {t('deal.perPerson')}
               </span>
             </div>
             <p className="text-base text-gray-400 line-through">
