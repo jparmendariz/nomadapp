@@ -150,7 +150,7 @@ async function searchAmadeusFlights(origin, destination, departureDate, returnDa
         duration: outbound?.duration,
         airline: offer.validatingAirlineCodes?.[0],
         // Generate affiliate link (Aviasales as fallback)
-        dealUrl: generateAffiliateLink(origin, destination, departureDate, returnDate)
+        dealUrl: generateGoogleFlightsLink(origin, destination, departureDate, returnDate)
       };
     });
   } catch (e) {
@@ -212,7 +212,7 @@ async function searchSerpAPIFlights(origin, destination, departureDate, returnDa
         duration: flight.total_duration ? `PT${flight.total_duration}M` : null,
         airline: outboundLeg?.airline,
         airlineLogo: outboundLeg?.airline_logo,
-        dealUrl: generateAffiliateLink(origin, destination, departureDate, returnDate)
+        dealUrl: generateGoogleFlightsLink(origin, destination, departureDate, returnDate)
       };
     }).filter(f => f !== null);
 
@@ -242,7 +242,7 @@ async function searchSerpAPIFlights(origin, destination, departureDate, returnDa
         duration: flight.total_duration ? `PT${flight.total_duration}M` : null,
         airline: outboundLeg?.airline,
         airlineLogo: outboundLeg?.airline_logo,
-        dealUrl: generateAffiliateLink(origin, destination, departureDate, returnDate)
+        dealUrl: generateGoogleFlightsLink(origin, destination, departureDate, returnDate)
       };
     }).filter(f => f !== null);
 
@@ -321,7 +321,30 @@ async function searchBookingHotels(destination, checkinDate, checkoutDate) {
   }
 }
 
-function generateAffiliateLink(origin, destination, departureDate, returnDate) {
+function generateGoogleFlightsLink(origin, destination, departureDate, returnDate) {
+  // Google Flights URL format
+  // For accurate pricing, we link directly to Google Flights
+  const baseUrl = 'https://www.google.com/travel/flights';
+
+  // Build search query
+  let query = `flights from ${origin} to ${destination}`;
+  if (departureDate) {
+    query += ` on ${departureDate}`;
+  }
+  if (returnDate) {
+    query += ` returning ${returnDate}`;
+  }
+
+  const params = new URLSearchParams({
+    q: query,
+    curr: 'USD'
+  });
+
+  return `${baseUrl}?${params}`;
+}
+
+// Keep Aviasales link generator for future use with Travelpayouts
+function generateAviasalesLink(origin, destination, departureDate, returnDate) {
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
     const d = new Date(dateStr);

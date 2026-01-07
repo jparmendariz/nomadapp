@@ -149,7 +149,7 @@ export default async function handler(req, res) {
         airlineLogo: outboundLeg?.airline_logo,
         flightNumber: outboundLeg?.flight_number,
         isBestFlight: true,
-        dealUrl: generateAffiliateLink(origin, destination, depDate, retDate)
+        dealUrl: generateGoogleFlightsLink(origin, destination, depDate, retDate)
       };
     }).filter(f => f !== null);
 
@@ -185,7 +185,7 @@ export default async function handler(req, res) {
         airlineLogo: outboundLeg?.airline_logo,
         flightNumber: outboundLeg?.flight_number,
         isBestFlight: false,
-        dealUrl: generateAffiliateLink(origin, destination, depDate, retDate)
+        dealUrl: generateGoogleFlightsLink(origin, destination, depDate, retDate)
       };
     });
 
@@ -217,22 +217,22 @@ export default async function handler(req, res) {
   }
 }
 
-function generateAffiliateLink(origin, destination, departureDate, returnDate) {
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    return `${String(d.getDate()).padStart(2, '0')}${String(d.getMonth() + 1).padStart(2, '0')}`;
-  };
+function generateGoogleFlightsLink(origin, destination, departureDate, returnDate) {
+  // Google Flights URL - prices will match exactly
+  const baseUrl = 'https://www.google.com/travel/flights';
 
-  const depDate = formatDate(departureDate);
-  const retDate = returnDate ? formatDate(returnDate) : '';
-
-  let path;
-  if (retDate) {
-    path = `/${origin}${depDate}${destination}${retDate}1`;
-  } else {
-    path = `/${origin}${depDate}${destination}1`;
+  let query = `flights from ${origin} to ${destination}`;
+  if (departureDate) {
+    query += ` on ${departureDate}`;
+  }
+  if (returnDate) {
+    query += ` returning ${returnDate}`;
   }
 
-  return `https://www.aviasales.com/search${path}?marker=${TRAVELPAYOUTS_MARKER}`;
+  const params = new URLSearchParams({
+    q: query,
+    curr: 'USD'
+  });
+
+  return `${baseUrl}?${params}`;
 }
