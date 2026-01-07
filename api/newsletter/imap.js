@@ -419,10 +419,10 @@ export function identifySender(fromAddress) {
 }
 
 /**
- * Connect to IMAP and fetch unread emails from known senders
- * Only fetches emails from the last 24 hours
+ * Connect to IMAP and fetch emails from known senders
+ * Only fetches emails from the last 24 hours (read or unread)
  */
-export async function fetchUnreadNewsletters(maxEmails = 20) {
+export async function fetchUnreadNewsletters(maxEmails = 50) {
   return new Promise((resolve, reject) => {
     if (!IMAP_CONFIG.user || !IMAP_CONFIG.password) {
       return reject(new Error('Newsletter email credentials not configured'));
@@ -437,14 +437,15 @@ export async function fetchUnreadNewsletters(maxEmails = 20) {
     const sinceDate = yesterday.toISOString().split('T')[0]; // Format: YYYY-MM-DD
 
     imap.once('ready', () => {
-      imap.openBox('INBOX', false, (err, box) => {
+      imap.openBox('INBOX', true, (err, box) => { // true = read-only mode
         if (err) {
           imap.end();
           return reject(err);
         }
 
-        // Search for unread emails from the last 24 hours only
-        imap.search(['UNSEEN', ['SINCE', sinceDate]], (err, results) => {
+        // Search for ALL emails from the last 24 hours (read or unread)
+        // Duplicates are filtered by checking processed_emails table in Supabase
+        imap.search([['SINCE', sinceDate]], (err, results) => {
           if (err) {
             imap.end();
             return reject(err);
@@ -459,8 +460,8 @@ export async function fetchUnreadNewsletters(maxEmails = 20) {
           const emailIds = results.slice(-maxEmails);
 
           const fetch = imap.fetch(emailIds, {
-            bodies: '',
-            markSeen: true // Mark as read after fetching
+            bodies: ''
+            // No markSeen - we process read and unread emails
           });
 
           fetch.on('message', (msg, seqno) => {
