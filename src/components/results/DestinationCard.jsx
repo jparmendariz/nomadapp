@@ -1,3 +1,5 @@
+import { useLanguage } from '../../contexts/LanguageContext';
+
 const weatherIcons = {
   sunny: '☀️',
   partly_cloudy: '⛅',
@@ -8,13 +10,14 @@ const weatherIcons = {
   foggy: '🌫️'
 };
 
-const seasonLabels = {
-  high: { label: 'Temporada alta', color: 'text-red-600 bg-red-50' },
-  medium: { label: 'Temporada media', color: 'text-amber-600 bg-amber-50' },
-  low: { label: 'Temporada baja', color: 'text-green-600 bg-green-50' }
+const seasonColors = {
+  high: 'text-red-600 bg-red-50',
+  medium: 'text-amber-600 bg-amber-50',
+  low: 'text-green-600 bg-green-50'
 };
 
 export default function DestinationCard({ destination, onSelect, onCompare, isSelected }) {
+  const { t, language } = useLanguage();
   const {
     city,
     country,
@@ -28,7 +31,13 @@ export default function DestinationCard({ destination, onSelect, onCompare, isSe
     costOfLiving
   } = destination;
 
-  const seasonInfo = seasonLabels[season] || seasonLabels.medium;
+  const seasonLabels = {
+    high: t('destination.seasonHigh'),
+    medium: t('destination.seasonMedium'),
+    low: t('destination.seasonLow')
+  };
+  const seasonColor = seasonColors[season] || seasonColors.medium;
+  const seasonLabel = seasonLabels[season] || seasonLabels.medium;
 
   return (
     <div className={`card cursor-pointer ${isSelected ? 'ring-2 ring-accent-500' : ''}`}>
@@ -47,8 +56,8 @@ export default function DestinationCard({ destination, onSelect, onCompare, isSe
           {weatherIcons[weather?.condition] || '🌤️'} {weather?.temp}°C
         </div>
         {/* Season Badge */}
-        <div className={`absolute top-3 left-3 px-2 py-1 rounded-full text-xs font-medium ${seasonInfo.color}`}>
-          {seasonInfo.label}
+        <div className={`absolute top-3 left-3 px-2 py-1 rounded-full text-xs font-medium ${seasonColor}`}>
+          {seasonLabel}
         </div>
       </div>
 
@@ -61,7 +70,7 @@ export default function DestinationCard({ destination, onSelect, onCompare, isSe
           </div>
           <div className="text-right">
             <p className="text-2xl font-bold text-primary-600">${totalCost}</p>
-            <p className="text-xs text-gray-500">total</p>
+            <p className="text-xs text-gray-500">{t('destination.total')}</p>
           </div>
         </div>
 
@@ -69,10 +78,25 @@ export default function DestinationCard({ destination, onSelect, onCompare, isSe
         <div className="flex flex-wrap gap-2 mb-3 text-xs">
           {costOfLiving && (
             <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded">
-              🍽️ ~${costOfLiving.food}/dia comida
+              ~${costOfLiving.food} {t('destination.foodPerDay')}
             </span>
           )}
         </div>
+
+        {/* Travel dates */}
+        {destination.departureDate && (
+          <div className="bg-olive-50 rounded-lg p-2 mb-3 text-sm">
+            <div className="flex items-center gap-2 text-olive-700">
+              <span>📅</span>
+              <span className="font-medium">
+                {new Date(destination.departureDate).toLocaleDateString(language === 'es' ? 'es-MX' : 'en-US', { day: 'numeric', month: 'short' })}
+                {' → '}
+                {new Date(destination.returnDate).toLocaleDateString(language === 'es' ? 'es-MX' : 'en-US', { day: 'numeric', month: 'short' })}
+              </span>
+              <span className="text-olive-500">({nights} {t('destination.nights')})</span>
+            </div>
+          </div>
+        )}
 
         {/* Quick info */}
         <div className="flex items-center gap-4 text-sm text-gray-600 pt-3 border-t border-gray-100">
@@ -83,25 +107,38 @@ export default function DestinationCard({ destination, onSelect, onCompare, isSe
           {hotel && (
             <div className="flex items-center gap-1">
               <span>🏨</span>
-              <span>${hotel.price}/noche</span>
+              <span>${hotel.price}{t('destination.perNight')}</span>
             </div>
           )}
-          <div className="flex items-center gap-1">
-            <span>📅</span>
-            <span>{nights} noches</span>
-          </div>
         </div>
 
-        {/* Providers Preview */}
-        {destination.providers && (
+        {/* Booking Links */}
+        {destination.affiliateLinks && (
           <div className="mt-3 pt-3 border-t border-gray-100">
-            <p className="text-xs text-gray-500 mb-2">Mejores precios:</p>
+            <p className="text-xs text-gray-500 mb-2">{t('destination.bestPrices')}</p>
             <div className="flex gap-2">
-              {destination.providers.slice(0, 2).map((p, i) => (
-                <span key={i} className="text-xs bg-primary-50 text-primary-700 px-2 py-1 rounded">
-                  {p.name}: ${p.price}
-                </span>
-              ))}
+              {destination.affiliateLinks.flight && (
+                <a
+                  href={destination.affiliateLinks.flight}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex-1 text-xs bg-blue-50 text-blue-700 px-3 py-2 rounded-lg hover:bg-blue-100 transition-colors text-center font-medium"
+                >
+                  ✈️ ${flight?.price}
+                </a>
+              )}
+              {destination.affiliateLinks.hotel && hotel && (
+                <a
+                  href={destination.affiliateLinks.hotel}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex-1 text-xs bg-orange-50 text-orange-700 px-3 py-2 rounded-lg hover:bg-orange-100 transition-colors text-center font-medium"
+                >
+                  🏨 ${hotel?.total}
+                </a>
+              )}
             </div>
           </div>
         )}
@@ -112,7 +149,7 @@ export default function DestinationCard({ destination, onSelect, onCompare, isSe
             onClick={() => onSelect(destination)}
             className="flex-1 btn-primary text-sm py-2"
           >
-            Ver detalles
+            {t('destination.viewDetails')}
           </button>
           <button
             onClick={(e) => {
@@ -124,7 +161,7 @@ export default function DestinationCard({ destination, onSelect, onCompare, isSe
                 ? 'bg-accent-500 text-white border-accent-500'
                 : 'border-gray-300 text-gray-600 hover:border-accent-500 hover:text-accent-500'
             }`}
-            title={isSelected ? 'Quitar de comparacion' : 'Agregar a comparacion'}
+            title={isSelected ? t('destination.removeCompare') : t('destination.addCompare')}
           >
             {isSelected ? '✓' : '+'}
           </button>

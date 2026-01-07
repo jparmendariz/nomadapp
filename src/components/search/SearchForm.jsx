@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // Aeropuertos principales de Mexico por estado
 const mexicanAirports = [
@@ -12,59 +13,37 @@ const mexicanAirports = [
   { code: 'ACA', name: 'Acapulco', state: 'Guerrero' },
   { code: 'AGU', name: 'Aguascalientes', state: 'Aguascalientes' },
   { code: 'BJX', name: 'Leon/Guanajuato', state: 'Guanajuato' },
-  { code: 'CEN', name: 'Ciudad Obregon', state: 'Sonora' },
   { code: 'CJS', name: 'Ciudad Juarez', state: 'Chihuahua' },
-  { code: 'CLQ', name: 'Colima', state: 'Colima' },
-  { code: 'CME', name: 'Ciudad del Carmen', state: 'Campeche' },
-  { code: 'CPE', name: 'Campeche', state: 'Campeche' },
-  { code: 'CTM', name: 'Chetumal', state: 'Quintana Roo' },
   { code: 'CUL', name: 'Culiacan', state: 'Sinaloa' },
   { code: 'CUU', name: 'Chihuahua', state: 'Chihuahua' },
-  { code: 'CVM', name: 'Ciudad Victoria', state: 'Tamaulipas' },
-  { code: 'CZM', name: 'Cozumel', state: 'Quintana Roo' },
-  { code: 'DGO', name: 'Durango', state: 'Durango' },
   { code: 'HMO', name: 'Hermosillo', state: 'Sonora' },
   { code: 'HUX', name: 'Huatulco', state: 'Oaxaca' },
   { code: 'LAP', name: 'La Paz', state: 'Baja California Sur' },
-  { code: 'LMM', name: 'Los Mochis', state: 'Sinaloa' },
-  { code: 'LTO', name: 'Loreto', state: 'Baja California Sur' },
-  { code: 'MAM', name: 'Matamoros', state: 'Tamaulipas' },
   { code: 'MID', name: 'Merida', state: 'Yucatan' },
   { code: 'MLM', name: 'Morelia', state: 'Michoacan' },
-  { code: 'MXL', name: 'Mexicali', state: 'Baja California' },
   { code: 'MZT', name: 'Mazatlan', state: 'Sinaloa' },
-  { code: 'NLD', name: 'Nuevo Laredo', state: 'Tamaulipas' },
-  { code: 'NLU', name: 'Santa Lucia (AIFA)', state: 'Estado de Mexico' },
   { code: 'OAX', name: 'Oaxaca', state: 'Oaxaca' },
-  { code: 'PAZ', name: 'Poza Rica', state: 'Veracruz' },
-  { code: 'PBC', name: 'Puebla', state: 'Puebla' },
   { code: 'PVR', name: 'Puerto Vallarta', state: 'Jalisco' },
-  { code: 'PXM', name: 'Puerto Escondido', state: 'Oaxaca' },
   { code: 'QRO', name: 'Queretaro', state: 'Queretaro' },
-  { code: 'REX', name: 'Reynosa', state: 'Tamaulipas' },
   { code: 'SJD', name: 'San Jose del Cabo', state: 'Baja California Sur' },
   { code: 'SLP', name: 'San Luis Potosi', state: 'San Luis Potosi' },
-  { code: 'TAM', name: 'Tampico', state: 'Tamaulipas' },
-  { code: 'TAP', name: 'Tapachula', state: 'Chiapas' },
   { code: 'TGZ', name: 'Tuxtla Gutierrez', state: 'Chiapas' },
-  { code: 'TLC', name: 'Toluca', state: 'Estado de Mexico' },
   { code: 'TRC', name: 'Torreon', state: 'Coahuila' },
   { code: 'VER', name: 'Veracruz', state: 'Veracruz' },
   { code: 'VSA', name: 'Villahermosa', state: 'Tabasco' },
-  { code: 'ZCL', name: 'Zacatecas', state: 'Zacatecas' },
   { code: 'ZIH', name: 'Zihuatanejo/Ixtapa', state: 'Guerrero' },
-  { code: 'ZLO', name: 'Manzanillo', state: 'Colima' }
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 export default function SearchForm({ onSearch, loading }) {
+  const { t, language } = useLanguage();
   const [formData, setFormData] = useState({
     tripType: 'flight_hotel',
     origin: 'MEX',
     destination: '',
     departureDate: '',
     returnDate: '',
-    flexibleDays: '0', // 0-7 dias de flexibilidad
-    noDates: false, // No tengo fechas aun
+    flexibleDays: '0',
+    noDates: false,
     budget: '',
     travelers: '1',
     hotelStars: '3'
@@ -89,12 +68,21 @@ export default function SearchForm({ onSearch, loading }) {
 
   const today = new Date().toISOString().split('T')[0];
 
+  const flexibilityOptions = [
+    { value: '0', label: t('search.exactDates') },
+    { value: '1', label: '+/- 1 ' + (language === 'es' ? 'día' : 'day') },
+    { value: '2', label: '+/- 2 ' + (language === 'es' ? 'días' : 'days') },
+    { value: '3', label: '+/- 3 ' + (language === 'es' ? 'días' : 'days') },
+    { value: '5', label: '+/- 5 ' + (language === 'es' ? 'días' : 'days') },
+    { value: '7', label: '+/- 7 ' + (language === 'es' ? 'días' : 'days') },
+  ];
+
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6 md:p-8 border border-olive-100">
       {/* Trip Type */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-olive-800 mb-3">
-          Que incluye tu viaje?
+          {t('search.tripType')}
         </label>
         <div className="flex gap-4">
           <label className="flex-1 cursor-pointer">
@@ -114,7 +102,7 @@ export default function SearchForm({ onSearch, loading }) {
               <svg className="w-8 h-8 mx-auto mb-2 text-olive-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
               </svg>
-              <span className="font-medium text-sm text-olive-700">Solo vuelo</span>
+              <span className="font-medium text-sm text-olive-700">{t('search.flightOnly')}</span>
             </div>
           </label>
           <label className="flex-1 cursor-pointer">
@@ -139,7 +127,7 @@ export default function SearchForm({ onSearch, loading }) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </div>
-              <span className="font-medium text-sm text-olive-700">Vuelo + Hotel</span>
+              <span className="font-medium text-sm text-olive-700">{t('search.flightHotel')}</span>
             </div>
           </label>
         </div>
@@ -150,7 +138,7 @@ export default function SearchForm({ onSearch, loading }) {
         {/* Origin */}
         <div>
           <label className="block text-sm font-medium text-olive-800 mb-1">
-            Ciudad de origen
+            {t('search.origin')}
           </label>
           <select
             name="origin"
@@ -170,7 +158,7 @@ export default function SearchForm({ onSearch, loading }) {
         {/* Budget */}
         <div>
           <label className="block text-sm font-medium text-olive-800 mb-1">
-            Presupuesto maximo (MXN)
+            {t('search.budget')}
           </label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-olive-500">$</span>
@@ -191,7 +179,7 @@ export default function SearchForm({ onSearch, loading }) {
         {/* Travelers */}
         <div>
           <label className="block text-sm font-medium text-olive-800 mb-1">
-            Viajeros
+            {t('search.travelers')}
           </label>
           <select
             name="travelers"
@@ -201,7 +189,7 @@ export default function SearchForm({ onSearch, loading }) {
           >
             {[1, 2, 3, 4, 5, 6].map(num => (
               <option key={num} value={num}>
-                {num} {num === 1 ? 'viajero' : 'viajeros'}
+                {num} {num === 1 ? t('search.traveler') : t('search.travelers_plural')}
               </option>
             ))}
           </select>
@@ -218,7 +206,7 @@ export default function SearchForm({ onSearch, loading }) {
               className="w-5 h-5 rounded border-olive-300 text-olive-600 focus:ring-olive-500"
             />
             <span className="text-sm font-medium text-olive-700 group-hover:text-olive-800">
-              No tengo fechas aun - mostrame las mejores opciones
+              {t('search.noDates')}
             </span>
           </label>
         </div>
@@ -227,7 +215,7 @@ export default function SearchForm({ onSearch, loading }) {
         {!formData.noDates && (
           <div>
             <label className="block text-sm font-medium text-olive-800 mb-1">
-              Fecha de salida
+              {t('search.departureDate')}
             </label>
             <input
               type="date"
@@ -245,7 +233,7 @@ export default function SearchForm({ onSearch, loading }) {
         {!formData.noDates && (
           <div>
             <label className="block text-sm font-medium text-olive-800 mb-1">
-              Fecha de regreso
+              {t('search.returnDate')}
             </label>
             <input
               type="date"
@@ -263,7 +251,7 @@ export default function SearchForm({ onSearch, loading }) {
         {!formData.noDates && (
           <div>
             <label className="block text-sm font-medium text-olive-800 mb-1">
-              Flexibilidad de fechas
+              {t('search.flexibility')}
             </label>
             <select
               name="flexibleDays"
@@ -271,15 +259,15 @@ export default function SearchForm({ onSearch, loading }) {
               onChange={handleChange}
               className="input-field"
             >
-              <option value="0">Fechas exactas</option>
-              <option value="1">+/- 1 dia</option>
-              <option value="2">+/- 2 dias</option>
-              <option value="3">+/- 3 dias</option>
-              <option value="4">+/- 4 dias</option>
-              <option value="5">+/- 5 dias</option>
-              <option value="6">+/- 6 dias</option>
-              <option value="7">+/- 7 dias</option>
+              {flexibilityOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
+            {parseInt(formData.flexibleDays) > 0 && (
+              <p className="text-xs text-olive-500 mt-1">
+                {t('search.flexibleHint', { days: formData.flexibleDays })}
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -288,7 +276,7 @@ export default function SearchForm({ onSearch, loading }) {
       {formData.tripType === 'flight_hotel' && (
         <div className="mb-6">
           <label className="block text-sm font-medium text-olive-800 mb-3">
-            Estrellas minimas del hotel
+            {t('search.hotelStars')}
           </label>
           <div className="flex gap-2">
             {['2', '3', '4', '5'].map(stars => (
@@ -327,14 +315,14 @@ export default function SearchForm({ onSearch, loading }) {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
-            <span>Buscando mejores precios...</span>
+            <span>{t('search.searching')}</span>
           </>
         ) : (
           <>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <span>Buscar destinos</span>
+            <span>{t('search.searchButton')}</span>
           </>
         )}
       </button>

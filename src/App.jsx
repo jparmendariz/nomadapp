@@ -6,9 +6,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import Header from './components/common/Header';
 import Search from './pages/Search';
 import Deals from './pages/Deals';
-import Events from './pages/Events';
 import Wishlist from './pages/Wishlist';
-import PriceCalendar from './pages/PriceCalendar';
 import Alerts from './pages/Alerts';
 import Map from './pages/Map';
 import Profile from './pages/Profile';
@@ -24,9 +22,7 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<Deals />} />
           <Route path="/buscar" element={<Search />} />
-          <Route path="/eventos" element={<Events />} />
           <Route path="/favoritos" element={<Wishlist />} />
-          <Route path="/calendario" element={<PriceCalendar />} />
           <Route path="/alertas" element={<Alerts />} />
           <Route path="/mapa" element={<Map />} />
           <Route path="/perfil" element={<Profile />} />

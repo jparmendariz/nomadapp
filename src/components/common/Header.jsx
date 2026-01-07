@@ -19,9 +19,8 @@ export default function Header() {
 
   const navItems = [
     { path: '/', label: t('nav.deals'), iconType: 'flash' },
-    { path: '/buscar', label: t('nav.search'), iconType: 'search' },
-    { path: '/eventos', label: t('nav.events'), iconType: 'ticket' },
-    { path: '/calendario', label: t('nav.calendar'), iconType: 'calendar' }
+    { path: '/mapa', label: t('nav.map'), iconType: 'map' },
+    { path: '/buscar', label: t('nav.search'), iconType: 'search' }
   ];
 
   return (
@@ -58,23 +57,8 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* Right side: Map + Alerts + Favorites + Language Toggle */}
+          {/* Right side: Alerts + Favorites + Language Toggle */}
           <div className="hidden md:flex items-center gap-3">
-            {/* Map */}
-            <Link
-              to="/mapa"
-              className={`relative p-2 rounded-lg transition-colors ${
-                location.pathname === '/mapa'
-                  ? 'bg-olive-700 text-olive-100'
-                  : 'text-olive-300 hover:bg-olive-700 hover:text-olive-100'
-              }`}
-              title={t('nav.map')}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-              </svg>
-            </Link>
-
             {/* Alerts */}
             <Link
               to="/alertas"
@@ -173,6 +157,11 @@ function NavIcon({ type }) {
     flash: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    ),
+    map: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
       </svg>
     ),
     ticket: (

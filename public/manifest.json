@@ -51,13 +51,6 @@
       "description": "Buscar un nuevo viaje",
       "url": "/buscar",
       "icons": [{ "src": "/assets/isotipo-olive.svg", "sizes": "96x96" }]
-    },
-    {
-      "name": "Calendario",
-      "short_name": "Calendario",
-      "description": "Ver calendario de precios",
-      "url": "/calendario",
-      "icons": [{ "src": "/assets/isotipo-olive.svg", "sizes": "96x96" }]
     }
   ],
   "related_applications": [],
