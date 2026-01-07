@@ -330,13 +330,13 @@ export function parseHotelToDeals(hotels, currency = 'USD') {
     const checkOut = new Date(hotel.checkOut);
     const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
 
-    // Precio por noche desde la API
+    // Precio por noche desde la API - NO inventar descuentos
     const pricePerNight = hotel.priceFrom || hotel.price || 50;
     const totalPrice = pricePerNight * nights;
 
-    // Simular descuento
-    const discountPercent = Math.floor(10 + Math.random() * 30);
-    const originalPrice = Math.round(totalPrice / (1 - discountPercent / 100));
+    // No inventar descuentos - mostrar precio real
+    const discountPercent = 0;
+    const originalPrice = null;
 
     // Generar link de afiliado
     const dealUrl = generateHotelLink({
@@ -589,11 +589,11 @@ export function parseFlightToDeals(flights) {
     // Calcular tiempo de expiración (ofertas expiran en 2-24h)
     const expiresAt = new Date(now.getTime() + (2 + Math.random() * 22) * 60 * 60 * 1000);
 
-    // El precio de la API ya es el precio real
+    // El precio de la API ya es el precio real - NO inventar descuentos
     const price = flight.value || flight.price;
-    // Simular precio original (10-30% más alto para mostrar descuento)
-    const discountPercent = Math.floor(15 + Math.random() * 25);
-    const originalPrice = Math.round(price / (1 - discountPercent / 100));
+    // Solo mostrar precio original si la API lo provee
+    const originalPrice = null;
+    const discountPercent = 0;
 
     return {
       id: `tp-${flight.origin}-${flight.destination}-${departureDate}-${index}`,

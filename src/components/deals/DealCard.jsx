@@ -221,12 +221,17 @@ export default function DealCard({ deal, isHot = false, compact = false, currenc
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-400">
-              <span className="line-through">{currencySymbol}{originalPrice.toLocaleString()}</span>
-              {!isExpired && !timeLeft.noExpiry && (
-                <span className="text-orange-600 ml-2">{timeLeft.hours}h {timeLeft.minutes}m</span>
-              )}
-            </p>
+            {originalPrice > 0 && (
+              <p className="text-xs text-gray-400">
+                <span className="line-through">{currencySymbol}{originalPrice.toLocaleString()}</span>
+                {!isExpired && !timeLeft.noExpiry && (
+                  <span className="text-orange-600 ml-2">{timeLeft.hours}h {timeLeft.minutes}m</span>
+                )}
+              </p>
+            )}
+            {deal.isEstimatedData && (
+              <p className="text-[10px] text-gray-400 mt-0.5">*Precio estimado</p>
+            )}
           </div>
 
           {/* Botones */}
@@ -435,9 +440,14 @@ export default function DealCard({ deal, isHot = false, compact = false, currenc
                 {currency} {t('deal.perPerson')}
               </span>
             </div>
-            <p className="text-base text-gray-400 line-through">
-              {currencySymbol}{originalPrice.toLocaleString()}
-            </p>
+            {originalPrice > 0 && (
+              <p className="text-base text-gray-400 line-through">
+                {currencySymbol}{originalPrice.toLocaleString()}
+              </p>
+            )}
+            {deal.isEstimatedData && (
+              <p className="text-xs text-gray-400 mt-1">*Precio estimado, puede variar</p>
+            )}
           </div>
 
           {/* Timer - solo mostrar si hay fecha de expiración real */}

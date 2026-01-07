@@ -14,23 +14,31 @@ const TRAVELPAYOUTS_MARKER = import.meta.env.VITE_TRAVELPAYOUTS_MARKER || '48671
 const BOOKING_AFFILIATE_ID = import.meta.env.VITE_BOOKING_AFFILIATE_ID || '2718406';
 
 // Mock data para modo demo (cuando no hay backend)
+// NOTA: Estos datos son estimados y pueden no reflejar precios reales.
+// Los precios mostrados son aproximaciones basadas en promedios históricos.
 function generateMockDeals() {
+  // Destinos con precios BASE REALISTAS desde México (ida y vuelta)
   const destinations = [
-    { name: 'Cancun', country: 'Mexico', region: 'caribbean' },
-    { name: 'Madrid', country: 'Spain', region: 'europe' },
-    { name: 'New York', country: 'USA', region: 'northAmerica' },
-    { name: 'Paris', country: 'France', region: 'europe' },
-    { name: 'Tokyo', country: 'Japan', region: 'asia' },
-    { name: 'Rome', country: 'Italy', region: 'europe' },
-    { name: 'Barcelona', country: 'Spain', region: 'europe' },
-    { name: 'Miami', country: 'USA', region: 'northAmerica' },
-    { name: 'Punta Cana', country: 'Dominican Republic', region: 'caribbean' },
-    { name: 'Los Cabos', country: 'Mexico', region: 'national' },
-    { name: 'London', country: 'UK', region: 'europe' },
-    { name: 'Sydney', country: 'Australia', region: 'oceania' },
+    { name: 'Cancun', code: 'CUN', country: 'Mexico', region: 'caribbean', baseFlightPrice: 150, baseHotelPrice: 80 },
+    { name: 'Los Cabos', code: 'SJD', country: 'Mexico', region: 'national', baseFlightPrice: 200, baseHotelPrice: 120 },
+    { name: 'Miami', code: 'MIA', country: 'USA', region: 'northAmerica', baseFlightPrice: 350, baseHotelPrice: 150 },
+    { name: 'New York', code: 'JFK', country: 'USA', region: 'northAmerica', baseFlightPrice: 400, baseHotelPrice: 200 },
+    { name: 'Madrid', code: 'MAD', country: 'Spain', region: 'europe', baseFlightPrice: 650, baseHotelPrice: 100 },
+    { name: 'Paris', code: 'CDG', country: 'France', region: 'europe', baseFlightPrice: 700, baseHotelPrice: 150 },
+    { name: 'Rome', code: 'FCO', country: 'Italy', region: 'europe', baseFlightPrice: 680, baseHotelPrice: 120 },
+    { name: 'Barcelona', code: 'BCN', country: 'Spain', region: 'europe', baseFlightPrice: 620, baseHotelPrice: 110 },
+    { name: 'London', code: 'LHR', country: 'UK', region: 'europe', baseFlightPrice: 750, baseHotelPrice: 180 },
+    { name: 'Tokyo', code: 'NRT', country: 'Japan', region: 'asia', baseFlightPrice: 1100, baseHotelPrice: 130 },
+    { name: 'Sydney', code: 'SYD', country: 'Australia', region: 'oceania', baseFlightPrice: 1400, baseHotelPrice: 160 },
+    { name: 'Punta Cana', code: 'PUJ', country: 'Dominican Republic', region: 'caribbean', baseFlightPrice: 380, baseHotelPrice: 90 },
   ];
 
-  const origins = ['Ciudad de Mexico', 'Guadalajara', 'Monterrey', 'Tijuana'];
+  const origins = [
+    { name: 'Ciudad de Mexico', code: 'MEX' },
+    { name: 'Guadalajara', code: 'GDL' },
+    { name: 'Monterrey', code: 'MTY' },
+    { name: 'Tijuana', code: 'TIJ' }
+  ];
   const types = ['flight', 'hotel', 'cruise'];
   const cruiseLines = [
     { name: 'Royal Caribbean', url: 'https://www.royalcaribbean.com' },
@@ -41,14 +49,14 @@ function generateMockDeals() {
   const cabinTypes = ['Interior', 'Ocean View', 'Balcony', 'Suite'];
 
   // Función para generar links de afiliado
-  const generateDealUrl = (type, dest, origin, travelDate, returnDate) => {
+  const generateDealUrl = (type, dest, originCode, travelDate, returnDate) => {
     const depDateStr = travelDate.toISOString().split('T')[0];
     const retDateStr = returnDate.toISOString().split('T')[0];
 
     if (type === 'flight') {
       return travelpayoutsService.generateFlightLink({
-        origin: 'MEX',
-        destination: dest.name.substring(0, 3).toUpperCase(),
+        origin: originCode,
+        destination: dest.code,
         departureDate: depDateStr,
         returnDate: retDateStr,
         adults: 1
@@ -67,29 +75,45 @@ function generateMockDeals() {
   const deals = [];
   const now = new Date();
 
-  // Generar 60 deals para mejor distribución en el calendario
-  for (let i = 0; i < 60; i++) {
+  // Generar 40 deals (reducido para ser más selectivo)
+  for (let i = 0; i < 40; i++) {
     const dest = destinations[Math.floor(Math.random() * destinations.length)];
     const type = types[Math.floor(Math.random() * types.length)];
-    const origin = origins[Math.floor(Math.random() * origins.length)];
-    const basePrice = 200 + Math.floor(Math.random() * 800);
-    const discount = 15 + Math.floor(Math.random() * 50);
-    const originalPrice = Math.round(basePrice / (1 - discount / 100));
-    const nights = 3 + Math.floor(Math.random() * 10);
+    const originData = origins[Math.floor(Math.random() * origins.length)];
+    const nights = 3 + Math.floor(Math.random() * 7); // 3-9 noches
 
-    // Travel dates: distribuir uniformemente en los próximos 6 meses
-    // Asegurar que cada mes tenga deals (10 por mes aproximadamente)
-    const monthOffset = Math.floor(i / 10); // 0-5 meses
-    const travelDate = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
-    // Día aleatorio dentro del mes
-    const daysInMonth = new Date(travelDate.getFullYear(), travelDate.getMonth() + 1, 0).getDate();
-    travelDate.setDate(1 + Math.floor(Math.random() * daysInMonth));
+    // PRECIOS REALISTAS basados en el destino
+    // Variación de ±15% para simular fluctuación normal
+    const priceVariation = 0.85 + Math.random() * 0.30; // 0.85 a 1.15
+    let basePrice;
+
+    if (type === 'flight') {
+      basePrice = Math.round(dest.baseFlightPrice * priceVariation);
+    } else if (type === 'hotel') {
+      basePrice = Math.round(dest.baseHotelPrice * nights * priceVariation);
+    } else {
+      // Cruceros: precio base por persona
+      basePrice = Math.round((400 + Math.random() * 600) * priceVariation);
+    }
+
+    // NO mostrar descuentos falsos - solo el precio estimado
+    // Si queremos mostrar "ahorro", usar un % muy conservador (5-12%)
+    const showDiscount = Math.random() < 0.3; // Solo 30% de deals muestran descuento
+    const discount = showDiscount ? Math.floor(5 + Math.random() * 8) : 0;
+    const originalPrice = discount > 0 ? Math.round(basePrice / (1 - discount / 100)) : null;
+
+    // FECHAS: SIEMPRE en el futuro (mínimo 7 días, máximo 6 meses)
+    const minDaysAhead = 7;
+    const maxDaysAhead = 180;
+    const daysAhead = minDaysAhead + Math.floor(Math.random() * (maxDaysAhead - minDaysAhead));
+    const travelDate = new Date(now);
+    travelDate.setDate(travelDate.getDate() + daysAhead);
     const returnDate = new Date(travelDate);
     returnDate.setDate(returnDate.getDate() + nights);
 
-    // Created at: random time in last 24 hours
+    // Created at: random time in last 12 hours
     const createdAt = new Date(now);
-    createdAt.setMinutes(createdAt.getMinutes() - Math.floor(Math.random() * 1440));
+    createdAt.setMinutes(createdAt.getMinutes() - Math.floor(Math.random() * 720));
 
     // Seleccionar cruise line si es crucero
     const cruiseLine = type === 'cruise' ? cruiseLines[Math.floor(Math.random() * cruiseLines.length)] : null;
@@ -99,33 +123,39 @@ function generateMockDeals() {
     if (type === 'cruise' && cruiseLine) {
       dealUrl = cruiseLine.url;
     } else {
-      dealUrl = generateDealUrl(type, dest, origin, travelDate, returnDate);
+      dealUrl = generateDealUrl(type, dest, originData.code, travelDate, returnDate);
     }
 
-    // 30% de los vuelos son solo ida
-    const isOneWayFlight = type === 'flight' && Math.random() < 0.3;
+    // 25% de los vuelos son solo ida
+    const isOneWayFlight = type === 'flight' && Math.random() < 0.25;
+    const finalPrice = isOneWayFlight ? Math.round(basePrice * 0.55) : basePrice;
 
     const deal = {
-      id: `deal-${i + 1}`,
+      id: `deal-${Date.now()}-${i}`,
       type,
       destinationName: dest.name,
+      destinationCode: dest.code,
       location: dest.name,
       country: dest.country,
       region: dest.region,
-      originName: origin,
-      price: isOneWayFlight ? Math.round(basePrice * 0.6) : basePrice, // Solo ida es más barato
-      originalPrice: isOneWayFlight ? Math.round(originalPrice * 0.6) : originalPrice,
+      originName: originData.name,
+      originCode: originData.code,
+      price: finalPrice,
+      originalPrice: isOneWayFlight && originalPrice ? Math.round(originalPrice * 0.55) : originalPrice,
       discountPercent: discount,
       nights: type !== 'flight' ? nights : null,
       travelDatesStart: travelDate.toISOString().split('T')[0],
       travelDatesEnd: isOneWayFlight ? null : returnDate.toISOString().split('T')[0],
       isOneWay: isOneWayFlight,
       createdAt: createdAt.toISOString(),
-      expiresAt: new Date(now.getTime() + (2 + Math.random() * 22) * 60 * 60 * 1000).toISOString(),
+      // No mostrar "expires" para datos estimados
+      expiresAt: null,
       provider: cruiseLine ? cruiseLine.name : null,
       cabinType: type === 'cruise' ? cabinTypes[Math.floor(Math.random() * cabinTypes.length)] : null,
       imageUrl: `https://source.unsplash.com/400x300/?${dest.name.toLowerCase()},travel`,
       dealUrl,
+      // Marcar claramente que son datos ESTIMADOS, no ofertas reales
+      isEstimatedData: true
     };
 
     deals.push(deal);
