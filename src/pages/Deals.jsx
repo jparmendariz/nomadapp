@@ -459,26 +459,15 @@ export default function Deals() {
           <p className="text-olive-500 mb-4 max-w-md mx-auto">
             Las ofertas aparecerán aquí cuando lleguen promociones a nuestro correo de newsletters de aerolíneas y agencias de viaje.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+          <div className="mt-6">
             <a
-              href="https://www.google.com/travel/flights?curr=MXN&hl=es"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/buscar"
               className="inline-flex items-center justify-center gap-2 bg-olive-600 hover:bg-olive-700 text-white font-medium py-2.5 px-5 rounded-lg transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              Buscar en Google Flights
-            </a>
-            <a
-              href="/buscar"
-              className="inline-flex items-center justify-center gap-2 bg-olive-100 hover:bg-olive-200 text-olive-700 font-medium py-2.5 px-5 rounded-lg transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Buscar por presupuesto
+              Buscar tu viaje
             </a>
           </div>
         </div>
