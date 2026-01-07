@@ -229,9 +229,6 @@ export default function DealCard({ deal, isHot = false, compact = false, currenc
                 )}
               </p>
             )}
-            {deal.isEstimatedData && (
-              <p className="text-[10px] text-gray-400 mt-0.5">*Precio estimado</p>
-            )}
           </div>
 
           {/* Botones */}
@@ -444,9 +441,6 @@ export default function DealCard({ deal, isHot = false, compact = false, currenc
               <p className="text-base text-gray-400 line-through">
                 {currencySymbol}{originalPrice.toLocaleString()}
               </p>
-            )}
-            {deal.isEstimatedData && (
-              <p className="text-xs text-gray-400 mt-1">*Precio estimado, puede variar</p>
             )}
           </div>
 
