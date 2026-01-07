@@ -332,9 +332,35 @@ export default function Search() {
           <h2 className="text-xl font-medium text-olive-700 mb-2">
             {t('search.empty')}
           </h2>
-          <p className="text-olive-500">
+          <p className="text-olive-500 mb-6">
             {t('search.emptyDesc')}
           </p>
+
+          {/* Google Flights Quick Link */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <a
+              href="https://www.google.com/travel/flights?curr=MXN&hl=es"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-olive-600 text-white rounded-xl font-medium hover:bg-olive-700 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+              {language === 'es' ? 'Buscar en Google Flights' : 'Search on Google Flights'}
+            </a>
+            <a
+              href="https://www.aviasales.com/?marker=486713"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-olive-600 text-olive-600 rounded-xl font-medium hover:bg-olive-50 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              {language === 'es' ? 'Buscar en Aviasales' : 'Search on Aviasales'}
+            </a>
+          </div>
         </div>
       )}
 

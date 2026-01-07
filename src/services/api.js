@@ -316,34 +316,80 @@ let realDealsCache = null;
 let realDealsCacheTime = null;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
+// Cache para deals de newsletters
+let newsletterDealsCache = null;
+let newsletterDealsCacheTime = null;
+
+/**
+ * Obtener deals de newsletters (Supabase)
+ * Estos son deals REALES extraídos de emails de aerolíneas y agencias
+ */
+export async function getNewsletterDeals(filters = {}) {
+  const now = Date.now();
+
+  // Usar cache si es válido (2 minutos para newsletters)
+  if (newsletterDealsCache && newsletterDealsCacheTime && (now - newsletterDealsCacheTime) < 120000) {
+    console.log('Using cached newsletter deals');
+    return newsletterDealsCache;
+  }
+
+  try {
+    const params = new URLSearchParams();
+    if (filters.type) params.append('type', filters.type);
+    if (filters.origin) params.append('origin', filters.origin);
+    if (filters.destination) params.append('destination', filters.destination);
+    if (filters.minPrice) params.append('minPrice', filters.minPrice);
+    if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
+
+    const response = await fetch(`/api/newsletter?${params}`);
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success && data.deals) {
+        console.log(`Loaded ${data.deals.length} newsletter deals`);
+        newsletterDealsCache = data;
+        newsletterDealsCacheTime = now;
+        return data;
+      }
+    }
+  } catch (error) {
+    console.log('Newsletter API error:', error.message);
+  }
+
+  return { deals: [], stats: { total: 0 } };
+}
+
+/**
+ * getDeals - Para la página de Deals/Flash
+ * Solo usa datos cacheados: newsletters + hoteles cacheados de Supabase
+ * NO hace llamadas a APIs externas en vivo (ahorra SerpAPI/Amadeus)
+ */
 export async function getDeals(filters = {}) {
   const now = Date.now();
 
-  // Usar cache si es válido
+  // Usar cache si es válido (5 minutos)
   if (realDealsCache && realDealsCacheTime && (now - realDealsCacheTime) < CACHE_DURATION) {
     console.log('Using cached deals data');
     return realDealsCache;
   }
 
+  // PRIORIDAD 1: Newsletter deals + cached hotels (de Supabase)
+  // Estos son GRATIS - no consumen API calls
   try {
-    // Intentar obtener deals reales del endpoint agregador
-    console.log('Fetching real deals from aggregator API...');
-    const response = await fetch('/api/deals');
+    console.log('Fetching deals from Supabase (newsletters + cached hotels)...');
+    const newsletterData = await getNewsletterDeals(filters);
 
-    if (response.ok) {
-      const data = await response.json();
-      if (data.success && data.deals && data.deals.length > 0) {
-        console.log(`Loaded ${data.deals.length} real deals from aggregator`);
-        realDealsCache = { deals: data.deals, stats: data.stats };
-        realDealsCacheTime = now;
-        return realDealsCache;
-      }
+    if (newsletterData.deals && newsletterData.deals.length > 0) {
+      console.log(`Loaded ${newsletterData.deals.length} deals from Supabase`);
+      realDealsCache = newsletterData;
+      realDealsCacheTime = now;
+      return realDealsCache;
     }
   } catch (error) {
-    console.log('Aggregator API error:', error.message);
+    console.log('Supabase deals error:', error.message);
   }
 
-  // Fallback: intentar Travelpayouts
+  // PRIORIDAD 2: Travelpayouts (gratis, no consume nuestros API calls)
   try {
     console.log('Trying Travelpayouts as fallback...');
     const { getFormattedDeals } = await import('./travelpayoutsService');
@@ -359,8 +405,8 @@ export async function getDeals(filters = {}) {
     console.log('Travelpayouts error:', error.message);
   }
 
-  // Último fallback: datos mock
-  console.log('Using mock data as last fallback');
+  // ÚLTIMO FALLBACK: datos mock (mientras no haya datos reales)
+  console.log('Using mock data as fallback (no real deals available yet)');
   if (!mockDealsCache) {
     mockDealsCache = generateMockDeals();
   }
@@ -375,6 +421,35 @@ export async function getDeals(filters = {}) {
   };
 
   return { deals, stats };
+}
+
+/**
+ * getLiveDeals - Para búsquedas activas en Search Trip
+ * USA APIs en vivo (SerpAPI, Amadeus) - usar con cautela
+ */
+export async function getLiveDeals(filters = {}) {
+  try {
+    console.log('Fetching LIVE deals from aggregator API...');
+    const response = await fetch('/api/deals');
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success && data.deals && data.deals.length > 0) {
+        console.log(`Loaded ${data.deals.length} LIVE deals`);
+        return { deals: data.deals, stats: data.stats };
+      }
+    }
+  } catch (error) {
+    console.log('Live deals API error:', error.message);
+  }
+
+  return { deals: [], stats: { total: 0 } };
+}
+
+// Limpiar cache de newsletter deals
+export function clearNewsletterDealsCache() {
+  newsletterDealsCache = null;
+  newsletterDealsCacheTime = null;
 }
 
 // Limpiar cache de deals reales

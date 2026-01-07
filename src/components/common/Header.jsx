@@ -19,9 +19,8 @@ export default function Header() {
 
   const navItems = [
     { path: '/', label: t('nav.deals'), iconType: 'flash' },
-    { path: '/vuelos', label: language === 'es' ? 'Vuelos' : 'Flights', iconType: 'plane' },
-    { path: '/mapa', label: t('nav.map'), iconType: 'map' },
-    { path: '/buscar', label: t('nav.search'), iconType: 'search' }
+    { path: '/buscar', label: t('nav.search'), iconType: 'search' },
+    { path: '/mapa', label: t('nav.map'), iconType: 'map' }
   ];
 
   return (

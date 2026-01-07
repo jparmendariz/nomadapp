@@ -6,7 +6,6 @@ import { AuthProvider } from './contexts/AuthContext';
 import Header from './components/common/Header';
 import Search from './pages/Search';
 import Deals from './pages/Deals';
-import Flights from './pages/Flights';
 import Wishlist from './pages/Wishlist';
 import Alerts from './pages/Alerts';
 import Map from './pages/Map';
@@ -22,7 +21,6 @@ function AppContent() {
       <main className="pb-20 md:pb-8">
         <Routes>
           <Route path="/" element={<Deals />} />
-          <Route path="/vuelos" element={<Flights />} />
           <Route path="/buscar" element={<Search />} />
           <Route path="/favoritos" element={<Wishlist />} />
           <Route path="/alertas" element={<Alerts />} />

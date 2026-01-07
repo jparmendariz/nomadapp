@@ -322,22 +322,36 @@ async function searchBookingHotels(destination, checkinDate, checkoutDate) {
 }
 
 function generateGoogleFlightsLink(origin, destination, departureDate, returnDate) {
-  // Google Flights URL format
-  // For accurate pricing, we link directly to Google Flights
-  const baseUrl = 'https://www.google.com/travel/flights';
+  // Google Flights tiene un formato específico de URL que funciona mejor
+  // Formato: /travel/flights/search?tfs=...
+  // Pero el formato con query es más confiable para deep linking
 
-  // Build search query
-  let query = `flights from ${origin} to ${destination}`;
-  if (departureDate) {
-    query += ` on ${departureDate}`;
+  const baseUrl = 'https://www.google.com/travel/flights/search';
+
+  // Formatear fecha para Google (YYYY-MM-DD ya es correcto)
+  const formatDateForDisplay = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[d.getMonth()]} ${d.getDate()}`;
+  };
+
+  // Construir query más específico
+  const depDisplay = formatDateForDisplay(departureDate);
+  const retDisplay = formatDateForDisplay(returnDate);
+
+  let query = `${origin} to ${destination}`;
+  if (depDisplay) {
+    query += ` ${depDisplay}`;
   }
-  if (returnDate) {
-    query += ` returning ${returnDate}`;
+  if (retDisplay) {
+    query += ` to ${retDisplay}`;
   }
 
   const params = new URLSearchParams({
     q: query,
-    curr: 'USD'
+    curr: 'MXN', // Cambiar a MXN para usuarios mexicanos
+    hl: 'es' // Español
   });
 
   return `${baseUrl}?${params}`;
@@ -377,31 +391,48 @@ export default async function handler(req, res) {
     const now = new Date();
     const allDeals = [];
 
-    // Generate dates for next 2-8 weeks
-    const getRandomFutureDate = (minDays, maxDays) => {
-      const date = new Date(now);
-      date.setDate(date.getDate() + minDays + Math.floor(Math.random() * (maxDays - minDays)));
-      return date.toISOString().split('T')[0];
+    // Generar fechas distribuidas en los próximos 12 meses
+    const generateDatesForYear = () => {
+      const dates = [];
+      for (let month = 0; month < 12; month++) {
+        const date = new Date(now);
+        date.setMonth(date.getMonth() + month + 1); // Empezar desde el próximo mes
+        date.setDate(15); // Mitad del mes como referencia
+        dates.push(date.toISOString().split('T')[0]);
+      }
+      return dates;
     };
 
-    // Search popular flight routes in parallel from multiple sources
-    const flightPromises = POPULAR_ROUTES.slice(0, 6).map(async (route) => {
-      const departureDate = getRandomFutureDate(14, 45);
-      const returnDate = Math.random() > 0.3 ? getRandomFutureDate(50, 75) : null;
+    const yearDates = generateDatesForYear();
 
-      // Search both Amadeus and SerpAPI in parallel
-      const [amadeusFlights, serpApiFlights] = await Promise.all([
-        searchAmadeusFlights(route.origin, route.destination, departureDate, returnDate),
-        searchSerpAPIFlights(route.origin, route.destination, departureDate, returnDate)
-      ]);
+    // Seleccionar 4 fechas distribuidas en el año (cada 3 meses aprox)
+    const selectedDates = [yearDates[0], yearDates[3], yearDates[6], yearDates[9]];
 
-      return [...amadeusFlights, ...serpApiFlights];
-    });
+    // Search popular flight routes para múltiples fechas
+    const flightPromises = [];
 
-    // Search hotels in popular destinations
-    const hotelPromises = HOTEL_DESTINATIONS.map(async (destination) => {
-      const checkinDate = getRandomFutureDate(14, 30);
-      const checkoutDate = getRandomFutureDate(17, 35);
+    for (const route of POPULAR_ROUTES.slice(0, 8)) {
+      // Buscar en 2 fechas diferentes por ruta
+      for (const departureDate of selectedDates.slice(0, 2)) {
+        const returnDate = new Date(departureDate);
+        returnDate.setDate(returnDate.getDate() + 7); // Viaje de 7 días
+        const returnDateStr = returnDate.toISOString().split('T')[0];
+
+        flightPromises.push(
+          Promise.all([
+            searchAmadeusFlights(route.origin, route.destination, departureDate, returnDateStr),
+            searchSerpAPIFlights(route.origin, route.destination, departureDate, returnDateStr)
+          ]).then(([amadeus, serpapi]) => [...amadeus, ...serpapi])
+        );
+      }
+    }
+
+    // Search hotels in popular destinations (usar fechas del año)
+    const hotelPromises = HOTEL_DESTINATIONS.map(async (destination, index) => {
+      const checkinDate = selectedDates[index % selectedDates.length];
+      const checkoutDateObj = new Date(checkinDate);
+      checkoutDateObj.setDate(checkoutDateObj.getDate() + 5); // 5 noches
+      const checkoutDate = checkoutDateObj.toISOString().split('T')[0];
       return searchBookingHotels(destination, checkinDate, checkoutDate);
     });
 
@@ -439,19 +470,52 @@ export default async function handler(req, res) {
     allDeals.length = 0;
     allDeals.push(...uniqueDeals);
 
-    // Calculate discounts and format deals
+    // Precios promedio por ruta (USD) - basado en datos históricos
+    const AVG_PRICES = {
+      // Nacionales
+      'MEX-CUN': 180, 'MEX-GDL': 120, 'MEX-MTY': 130, 'MEX-TIJ': 200,
+      'GDL-CUN': 220, 'MTY-CUN': 250,
+      // USA
+      'MEX-MIA': 350, 'MEX-LAX': 380, 'MEX-JFK': 450, 'MEX-LAS': 320,
+      'GDL-LAX': 300, 'MTY-MIA': 320,
+      // Europa
+      'MEX-MAD': 850, 'MEX-BCN': 900, 'MEX-CDG': 950, 'MEX-LHR': 980,
+      // Sudamérica
+      'MEX-BOG': 400, 'MEX-LIM': 450, 'MEX-SCL': 600,
+      // Default por región
+      'default_national': 150,
+      'default_northAmerica': 380,
+      'default_europe': 900,
+      'default_southAmerica': 480,
+      'default_caribbean': 300,
+      'default_asia': 1200
+    };
+
+    // Calcular descuento ESTIMADO basado en precio promedio de la ruta
+    const calculateEstimatedDiscount = (deal) => {
+      const routeKey = `${deal.originCode}-${deal.destinationCode}`;
+      const region = getRegion(deal.destinationCode);
+      const avgPrice = AVG_PRICES[routeKey] || AVG_PRICES[`default_${region}`] || 500;
+
+      // Calcular % de ahorro vs promedio
+      const savings = avgPrice - deal.price;
+      if (savings <= 0) return { discountPercent: 0, avgPrice };
+
+      const discountPercent = Math.min(Math.round((savings / avgPrice) * 100), 60);
+      return { discountPercent, avgPrice };
+    };
+
+    // Format deals con descuento estimado (no inventado)
     const formattedDeals = allDeals.map((deal, index) => {
-      const discountPercent = Math.floor(15 + Math.random() * 25);
-      const originalPrice = Math.round(deal.price / (1 - discountPercent / 100));
-      const expiresAt = new Date(now.getTime() + (2 + Math.random() * 22) * 60 * 60 * 1000);
+      const { discountPercent, avgPrice } = calculateEstimatedDiscount(deal);
 
       return {
         ...deal,
         id: deal.id || `deal-${index}`,
-        originalPrice,
-        discountPercent,
+        originalPrice: avgPrice, // Precio promedio de referencia
+        discountPercent: discountPercent, // Ahorro estimado vs promedio
+        isEstimatedDiscount: true, // Indicador de que es estimado
         createdAt: now.toISOString(),
-        expiresAt: expiresAt.toISOString(),
         region: getRegion(deal.destinationCode),
         isRealData: true
       };
