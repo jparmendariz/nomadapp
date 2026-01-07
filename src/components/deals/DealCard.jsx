@@ -223,7 +223,7 @@ export default function DealCard({ deal, isHot = false, compact = false, currenc
             </div>
             <p className="text-xs text-gray-400">
               <span className="line-through">{currencySymbol}{originalPrice.toLocaleString()}</span>
-              {!isExpired && (
+              {!isExpired && !timeLeft.noExpiry && (
                 <span className="text-orange-600 ml-2">{timeLeft.hours}h {timeLeft.minutes}m</span>
               )}
             </p>
@@ -440,8 +440,8 @@ export default function DealCard({ deal, isHot = false, compact = false, currenc
             </p>
           </div>
 
-          {/* Timer */}
-          {!isExpired ? (
+          {/* Timer - solo mostrar si hay fecha de expiración real */}
+          {!isExpired && !timeLeft.noExpiry && (
             <div className="flex items-center gap-2 mb-3 text-orange-600">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -450,7 +450,8 @@ export default function DealCard({ deal, isHot = false, compact = false, currenc
                 {t('deal.expiresIn')} {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
               </span>
             </div>
-          ) : (
+          )}
+          {isExpired && !timeLeft.noExpiry && (
             <div className="flex items-center gap-2 mb-3 text-gray-500">
               <span className="text-sm font-medium">{t('deal.expired')}</span>
             </div>
@@ -530,7 +531,19 @@ function getTitle(deal) {
 }
 
 function getTimeLeft(expiresAt) {
-  const total = new Date(expiresAt) - new Date();
+  // Si no hay fecha de expiración, mostrar tiempo por defecto (24 horas)
+  if (!expiresAt) {
+    return { total: 86400000, hours: 24, minutes: 0, seconds: 0, noExpiry: true };
+  }
+
+  const expiryDate = new Date(expiresAt);
+
+  // Si la fecha es inválida, mostrar tiempo por defecto
+  if (isNaN(expiryDate.getTime())) {
+    return { total: 86400000, hours: 24, minutes: 0, seconds: 0, noExpiry: true };
+  }
+
+  const total = expiryDate - new Date();
 
   if (total <= 0) {
     return { total: 0, hours: 0, minutes: 0, seconds: 0 };
