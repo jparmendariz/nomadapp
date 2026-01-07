@@ -1,5 +1,5 @@
 import axios from 'axios';
-import skyscannerService from './skyscannerService';
+import travelpayoutsService from './travelpayoutsService';
 import bookingService from './bookingService';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -9,8 +9,8 @@ const api = axios.create({
   timeout: 30000
 });
 
-// IDs de afiliados (se usan en los links aunque las APIs no estén configuradas)
-const SKYSCANNER_AFFILIATE_ID = import.meta.env.VITE_SKYSCANNER_AFFILIATE_ID || 'nomadapp';
+// IDs de afiliados
+const TRAVELPAYOUTS_MARKER = import.meta.env.VITE_TRAVELPAYOUTS_MARKER || '486713';
 const BOOKING_AFFILIATE_ID = import.meta.env.VITE_BOOKING_AFFILIATE_ID || '2718406';
 
 // Mock data para modo demo (cuando no hay backend)
@@ -46,9 +46,9 @@ function generateMockDeals() {
     const retDateStr = returnDate.toISOString().split('T')[0];
 
     if (type === 'flight') {
-      return skyscannerService.generateAffiliateLink({
+      return travelpayoutsService.generateFlightLink({
         origin: 'MEX',
-        destination: dest.name.toLowerCase().replace(/ /g, '-'),
+        destination: dest.name.substring(0, 3).toUpperCase(),
         departureDate: depDateStr,
         returnDate: retDateStr,
         adults: 1
@@ -199,7 +199,7 @@ function generateMockSearchResults(params) {
       const retDateStr = retDate.toISOString().split('T')[0];
 
       // Generar links de afiliado
-      const flightLink = skyscannerService.generateAffiliateLink({
+      const flightLink = travelpayoutsService.generateFlightLink({
         origin: originCode,
         destination: dest.code,
         departureDate: depDateStr,
@@ -243,7 +243,7 @@ function generateMockSearchResults(params) {
         },
         // Proveedores con links de afiliado
         providers: [
-          { name: 'Skyscanner', price: flightPrice, url: flightLink, type: 'flight' },
+          { name: 'Aviasales', price: flightPrice, url: flightLink, type: 'flight' },
           { name: 'Booking.com', price: hotelPricePerNight * nights, url: hotelLink, type: 'hotel' },
         ],
         // Links principales para botones de acción
