@@ -277,6 +277,7 @@ export const NEWSLETTER_SENDERS = [
   { domain: 'virginvoyages.com', name: 'Virgin Voyages', type: 'cruise' },
   { domain: 'cruisedirect.com', name: 'CruiseDirect', type: 'cruise' },
   { domain: 'cruisecritic.com', name: 'Cruise Critic', type: 'cruise' },
+  { domain: 'vacationstogo.com', name: 'Vacations To Go', type: 'cruise' },
 
   // =============================================
   // RENTA DE AUTOS
