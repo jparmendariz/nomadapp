@@ -8,8 +8,19 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { createHash } from 'crypto';
 import { fetchUnreadNewsletters } from './imap.js';
 import { parseNewsletter, validateDeal } from './parser.js';
+
+/**
+ * Generate a valid UUID v5-like from a string
+ * Creates a deterministic UUID based on the input string
+ */
+function stringToUUID(str) {
+  const hash = createHash('sha256').update(str).digest('hex');
+  // Format as UUID: 8-4-4-4-12
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
+}
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
@@ -233,10 +244,12 @@ async function cacheHotelsFromBooking(supabase) {
         const discountPercent = savings > 0 ? Math.min(Math.round((savings / avgPricePerNight) * 100), 50) : 0;
 
         // Upsert hotel deal (update if exists, insert if not)
+        // Generate a valid UUID from the hotel identifier
+        const hotelUUID = stringToUUID(`booking-${dest.code}-${hotel.hotel_id}`);
         const { error } = await supabase
           .from('newsletter_deals')
           .upsert({
-            id: `booking-${dest.code}-${hotel.hotel_id}`,
+            id: hotelUUID,
             type: 'hotel',
             source: 'Booking.com',
             source_type: 'hotel',
